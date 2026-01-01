@@ -25,7 +25,12 @@
 
                         <div class="mb-4">
                             <label class="block text-gray-700 text-sm font-bold mb-2">Tanggal</label>
-                            <input type="date" name="date" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                            <input type="date" 
+                                name="date" 
+                                id="date" 
+                                class="w-full border-gray-300 rounded-md shadow-sm text-gray-900 bg-white focus:border-blue-500 focus:ring-blue-500"
+                                style="color-scheme: light;"
+                                required>
                         </div>
 
                         <div class="mb-4">
