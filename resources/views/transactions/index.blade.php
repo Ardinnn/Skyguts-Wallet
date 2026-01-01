@@ -54,61 +54,98 @@
                         </a>
                     </div>
 
-                    <table class="min-w-full table-auto">
-                        <thead class="bg-gray-100">
-                            <tr>
-                                <th class="px-4 py-2 text-left">Tanggal</th>
-                                <th class="px-4 py-2 text-left">Keterangan</th>
-                                <th class="px-4 py-2 text-left">Kategori</th>
-                                <th class="px-4 py-2 text-left">Jenis</th>
-                                <th class="px-4 py-2 text-right">Jumlah (Rp)</th>
-                                <th class="px-4 py-2 text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @forelse($transactions as $transaction)
-                            <tr class="border-b">
-                                <td class="px-4 py-2">{{ $transaction->date }}</td>
-                                <td class="px-4 py-2">{{ $transaction->title }}</td>
-                                <td class="px-4 py-2">{{ $transaction->category }}</td>
-                                <td class="px-4 py-2">
-                                    @if($transaction->type == 'income')
-                                        <span class="text-green-600 font-bold">Pemasukan</span>
-                                    @else
-                                        <span class="text-red-600 font-bold">Pengeluaran</span>
-                                    @endif
-                                </td>
-                                <td class="px-4 py-2 text-right">
+                    <div class="block md:hidden">
+                        @forelse($transactions as $transaction)
+                        <div class="bg-gray-50 p-4 mb-4 rounded-lg border border-gray-200 shadow-sm">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-xs text-gray-500">
+                                    {{ $transaction->date }}
+                                </span>
+                                <span class="font-bold {{ $transaction->type == 'income' ? 'text-green-600' : 'text-red-600' }}">
                                     Rp {{ number_format($transaction->amount, 0, ',', '.') }}
-                                </td>
-                                <td class="px-4 py-2 text-center">
-    <form onsubmit="return confirm('Apakah Anda Yakin ?');" action="{{ route('transactions.destroy', $transaction->id) }}" method="POST">
-        <a href="{{ route('transactions.edit', $transaction->id) }}" class="text-blue-500 hover:text-blue-700 mr-2">Edit</a>
+                                </span>
+                            </div>
 
-        @csrf
-        @method('DELETE')
-        <button type="submit" class="text-red-500 hover:text-red-700">Hapus</button>
-    </form>
-</td>
-                            </tr>
-                            @empty
-                            <tr>
-                                <td colspan="6" class="text-center px-4 py-6 text-gray-500">
-                                    Belum ada data transaksi. Yuk tambah baru!
-                                </td>
-                            </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
+                            <h4 class="text-lg font-bold text-gray-800 mb-1">
+                                {{ $transaction->title }}
+                            </h4>
 
-                </div>
-            </div>
-        </div>
-    </div>
+                            <div class="flex items-center gap-2 mb-3 text-sm">
+                                <span class="bg-white border px-2 py-1 rounded text-xs text-gray-600">
+                                    {{ $transaction->category }}
+                                </span>
+                                <span class="{{ $transaction->type == 'income' ? 'text-green-500' : 'text-red-500' }} text-xs font-semibold uppercase">
+                                    {{ $transaction->type == 'income' ? 'Pemasukan' : 'Pengeluaran' }}
+                                </span>
+                            </div>
 
-    <div style="height: 150px;"></div>
-        
-    </div>
-</div>
+                            <div class="flex justify-end items-center border-t border-gray-200 pt-3 mt-2">
+                                <form onsubmit="return confirm('Apakah Anda Yakin ?');" action="{{ route('transactions.destroy', $transaction->id) }}" method="POST" class="flex items-center gap-4">
+                                    <a href="{{ route('transactions.edit', $transaction->id) }}" class="text-blue-600 font-semibold text-sm">
+                                        Edit
+                                    </a>
+                                    
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 font-semibold text-sm">
+                                        Hapus
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                        @empty
+                        <div class="text-center py-6 text-gray-500">
+                            Belum ada data transaksi.
+                        </div>
+                        @endforelse
+                    </div>
+
+                    <div class="hidden md:block overflow-x-auto">
+                        <table class="min-w-full table-auto">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-4 py-2 text-left">Tanggal</th>
+                                    <th class="px-4 py-2 text-left">Keterangan</th>
+                                    <th class="px-4 py-2 text-left">Kategori</th>
+                                    <th class="px-4 py-2 text-left">Jenis</th>
+                                    <th class="px-4 py-2 text-right">Jumlah (Rp)</th>
+                                    <th class="px-4 py-2 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($transactions as $transaction)
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="px-4 py-2">{{ $transaction->date }}</td>
+                                    <td class="px-4 py-2">{{ $transaction->title }}</td>
+                                    <td class="px-4 py-2">{{ $transaction->category }}</td>
+                                    <td class="px-4 py-2">
+                                        @if($transaction->type == 'income')
+                                            <span class="text-green-600 font-bold">Pemasukan</span>
+                                        @else
+                                            <span class="text-red-600 font-bold">Pengeluaran</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-2 text-right font-bold">
+                                        Rp {{ number_format($transaction->amount, 0, ',', '.') }}
+                                    </td>
+                                    <td class="px-4 py-2 text-center">
+                                        <form onsubmit="return confirm('Apakah Anda Yakin ?');" action="{{ route('transactions.destroy', $transaction->id) }}" method="POST">
+                                            <a href="{{ route('transactions.edit', $transaction->id) }}" class="text-blue-500 hover:text-blue-700 mr-2">Edit</a>
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-red-500 hover:text-red-700">Hapus</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="6" class="text-center px-4 py-6 text-gray-500">
+                                        Belum ada data transaksi. Yuk tambah baru!
+                                    </td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
 
 </x-app-layout>
