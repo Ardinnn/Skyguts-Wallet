@@ -105,4 +105,12 @@
             </div>
         </div>
     </div>
+
+    <div style="margin-top: 50px; text-align: center; color: red;">
+            Halaman Update V3
+        </div>
+        <br><br><br><br><br><br><br><br><br><br>
+        
+    </div> </div>
+
 </x-app-layout>
