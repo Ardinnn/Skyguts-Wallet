@@ -10,6 +10,7 @@
             <div class="bg-white overflow-x-auto shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
 
+                {{-- Filter & Header Laporan --}}
                 <div class="mb-6 flex justify-between items-center">
                         <h3 class="text-lg font-bold text-gray-700">
                             Laporan Bulan: {{ \Carbon\Carbon::parse($filterDate)->translatedFormat('F Y') }}
@@ -22,8 +23,8 @@
                                 class="border-gray-300 rounded-md shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
                         </form>
                     </div>
-                   
-
+                    
+                {{-- Kartu Ringkasan Saldo --}}
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                         <div class="bg-green-100 p-4 rounded-lg shadow-sm border-l-4 border-green-500">
                             <p class="text-green-600 text-sm font-bold uppercase">Total Pemasukan</p>
@@ -47,13 +48,14 @@
                         </div>
                     </div>
                     
-
+                    {{-- Tombol Tambah --}}
                     <div class="mb-4">
                         <a href="{{ route('transactions.create') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                             + Tambah Transaksi
                         </a>
                     </div>
 
+                    {{-- TAMPILAN MOBILE (HP) --}}
                     <div class="block md:hidden">
                         @forelse($transactions as $transaction)
                         <div class="bg-gray-50 p-4 mb-4 rounded-lg border border-gray-200 shadow-sm">
@@ -69,6 +71,15 @@
                             <h4 class="text-lg font-bold text-gray-800 mb-1">
                                 {{ $transaction->title }}
                             </h4>
+
+                            {{-- Kode Baru: Tampilkan Link Foto di HP --}}
+                            @if($transaction->image)
+                                <div class="mb-2">
+                                    <a href="{{ asset('storage/' . $transaction->image) }}" target="_blank" class="text-xs text-blue-500 hover:text-blue-700 flex items-center gap-1">
+                                        📷 Lihat Bukti Foto
+                                    </a>
+                                </div>
+                            @endif
 
                             <div class="flex items-center gap-2 mb-3 text-sm">
                                 <span class="bg-white border px-2 py-1 rounded text-xs text-gray-600">
@@ -100,6 +111,7 @@
                         @endforelse
                     </div>
 
+                    {{-- TAMPILAN DESKTOP (LAPTOP) --}}
                     <div class="hidden md:block overflow-x-auto">
                         <table class="min-w-full table-auto">
                             <thead class="bg-gray-100">
@@ -107,6 +119,8 @@
                                     <th class="px-4 py-2 text-left">Tanggal</th>
                                     <th class="px-4 py-2 text-left">Keterangan</th>
                                     <th class="px-4 py-2 text-left">Kategori</th>
+                                    {{-- Kode Baru: Header Bukti --}}
+                                    <th class="px-4 py-2 text-left">Bukti</th> 
                                     <th class="px-4 py-2 text-left">Jenis</th>
                                     <th class="px-4 py-2 text-right">Jumlah (Rp)</th>
                                     <th class="px-4 py-2 text-center">Aksi</th>
@@ -118,6 +132,18 @@
                                     <td class="px-4 py-2">{{ $transaction->date }}</td>
                                     <td class="px-4 py-2">{{ $transaction->title }}</td>
                                     <td class="px-4 py-2">{{ $transaction->category }}</td>
+                                    
+                                    {{-- Kode Baru: Kolom Bukti --}}
+                                    <td class="px-4 py-2">
+                                        @if($transaction->image)
+                                            <a href="{{ asset('storage/' . $transaction->image) }}" target="_blank" class="text-blue-500 hover:text-blue-700 underline text-sm">
+                                                Lihat Foto
+                                            </a>
+                                        @else
+                                            <span class="text-gray-400 text-xs">-</span>
+                                        @endif
+                                    </td>
+
                                     <td class="px-4 py-2">
                                         @if($transaction->type == 'income')
                                             <span class="text-green-600 font-bold">Pemasukan</span>
@@ -139,7 +165,8 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="6" class="text-center px-4 py-6 text-gray-500">
+                                    {{-- Update colspan jadi 7 karena kolom bertambah --}}
+                                    <td colspan="7" class="text-center px-4 py-6 text-gray-500">
                                         Belum ada data transaksi. Yuk tambah baru!
                                     </td>
                                 </tr>

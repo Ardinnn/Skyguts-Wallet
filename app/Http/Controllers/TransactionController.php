@@ -56,23 +56,35 @@ class TransactionController extends Controller
 
     public function store(Request $request)
     {
+        // 1. Validasi (Tambahkan validasi gambar)
         $request->validate([
             'title' => 'required|max:255',
             'amount' => 'required|numeric',
             'type' => 'required|in:income,expense',
             'date' => 'required|date',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048', // Maksimal 2MB
         ]);
 
+        // 2. Cek apakah user mengupload gambar?
+        $imagePath = null; // Default kosong
+        
+        if ($request->hasFile('image')) {
+            // Simpan ke folder public/images
+            $imagePath = $request->file('image')->store('images', 'public');
+        }
+
+        // 3. Simpan ke Database
         Transaction::create([
             'user_id' => Auth::id(),
-            'title' => $request->title,
+            'title' => $request->title,      // Pakai title kamu
             'amount' => $request->amount,
-            'category' => $request->category,
+            'category' => $request->category, // Pakai category kamu
             'type' => $request->type,
             'date' => $request->date,
+            'image' => $imagePath,           // Masukkan path gambar di sini
         ]);
 
-        return redirect()->route('transactions.index')->with('success', 'Transaksi berhasil disimpan!.');
+        return redirect()->route('transactions.index')->with('success', 'Transaksi berhasil disimpan!');
     }
 
     // Menampilkan halaman edit

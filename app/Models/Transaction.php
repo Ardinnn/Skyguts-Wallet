@@ -15,6 +15,7 @@ class Transaction extends Model
         'amount',
         'type',
         'category',
-        'date'
+        'date',
+        'image',
     ];
 }

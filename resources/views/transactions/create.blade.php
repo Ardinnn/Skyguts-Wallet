@@ -10,7 +10,7 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
 
-                    <form action="{{ route('transactions.store') }}" method="POST">
+                    <form action="{{ route('transactions.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         
                         <div class="mb-4">
@@ -49,6 +49,14 @@
                                 <option value="Gaji">Gaji</option>
                                 <option value="Lainnya">Lainnya</option>
                             </select>
+                        </div>
+
+                        <div class="mb-4">
+                        <x-input-label for="image" :value="__('Bukti Foto (Opsional)')" />
+                        <input id="image" class="block mt-1 w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none" 
+                         type="file" 
+                         name="image">
+                        <x-input-error :messages="$errors->get('image')" class="mt-2" />
                         </div>
 
                         <div class="flex items-center justify-between">
