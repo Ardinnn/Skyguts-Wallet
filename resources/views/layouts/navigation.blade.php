@@ -12,9 +12,16 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
+                    <x-nav-link :href="route('transactions.index')" :active="request()->routeIs('transactions.*')">
+                        {{ __('Dompet Saya') }}
                     </x-nav-link>
+
+                    @if(Auth::user()->role == 'admin')
+                     <x-nav-link :href="route('admin.users')" :active="request()->routeIs('admin.users')">
+                        {{ __('Data Nasabah') }}
+                     </x-nav-link>
+                    @endif
+
                 </div>
             </div>
 

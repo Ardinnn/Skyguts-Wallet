@@ -18,4 +18,9 @@ class Transaction extends Model
         'date',
         'image',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

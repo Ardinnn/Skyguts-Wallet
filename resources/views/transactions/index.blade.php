@@ -1,25 +1,50 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-            <h2 class="font-bold text-2xl text-white leading-tight">
-                {{ __('Dompet Saya 💰') }}
-            </h2>
             
-            {{-- Filter Bulan yang Lebih Modern --}}
-            <form action="{{ route('transactions.index') }}" method="GET" class="flex items-center bg-white p-1 rounded-lg shadow-sm border border-gray-200">
-                <input type="month" name="date" value="{{ $filterDate }}" 
-                    onchange="this.form.submit()" 
-                    class="border-none focus:ring-0 text-sm text-gray-600 bg-transparent cursor-pointer">
-            </form>
+            {{-- KIRI: Judul & Badge Role --}}
+            <div class="flex items-center gap-3">
+                <h2 class="font-bold text-2xl text-white leading-tight">
+                    {{ __('Dompet Saya 💰') }}
+                </h2>
+
+                @if(Auth::user()->role == 'admin')
+                    <span class="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider shadow-sm border border-red-400">
+                        Admin Mode
+                    </span>
+                @else
+                    <span class="bg-blue-500 text-white text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider shadow-sm border border-blue-400">
+                        Member
+                    </span>
+                @endif
+            </div>
+
+            {{-- KANAN: Tombol Admin & Filter --}}
+            <div class="flex items-center gap-3">
+                
+                {{-- TOMBOL KHUSUS ADMIN: CEK SALDO MEMBER --}}
+                @if(Auth::user()->role == 'admin')
+                    <a href="{{ route('admin.users') }}" class="bg-white text-indigo-600 hover:bg-indigo-50 border border-indigo-200 font-bold py-2 px-4 rounded-lg shadow-sm text-xs sm:text-sm transition flex items-center gap-2">
+                        👥 <span class="hidden sm:inline">Cek Saldo Member</span>
+                    </a>
+                @endif
+
+                {{-- Filter Bulan --}}
+                <form action="{{ route('transactions.index') }}" method="GET" class="flex items-center bg-white p-1 rounded-lg shadow-sm border border-gray-200">
+                    <input type="month" name="date" value="{{ $filterDate }}" 
+                        onchange="this.form.submit()" 
+                        class="border-none focus:ring-0 text-sm text-gray-600 bg-transparent cursor-pointer">
+                </form>
+            </div>
+
         </div>
     </x-slot>
 
     <div class="py-12 pb-32">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
-            {{-- BAGIAN 1: KARTU SALDO (GRADIENT STYLE) --}}
+            {{-- BAGIAN 1: KARTU SALDO --}}
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 px-4 sm:px-0">
-                
                 <div class="relative overflow-hidden bg-gradient-to-br from-green-400 to-green-600 rounded-2xl shadow-lg text-white p-6 transition transform hover:-translate-y-1 hover:shadow-xl">
                     <div class="absolute right-0 top-0 opacity-10 transform translate-x-2 -translate-y-2">
                         <svg class="w-24 h-24" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"></path></svg>
@@ -51,7 +76,7 @@
                 </div>
             </div>
 
-            {{-- TOMBOL TAMBAH (Floating Style) --}}
+            {{-- TOMBOL TAMBAH --}}
             <div class="flex justify-between items-center mb-6 px-4 sm:px-0">
                 <h3 class="text-lg font-bold text-gray-700">Riwayat Transaksi</h3>
                 <a href="{{ route('transactions.create') }}" class="group relative inline-flex items-center justify-center px-6 py-2 text-base font-bold text-white transition-all duration-200 bg-indigo-600 font-pj rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 hover:bg-indigo-700 shadow-lg">
@@ -60,13 +85,21 @@
                 </a>
             </div>
 
-            {{-- BAGIAN 2: TAMPILAN MOBILE (Card Style Modern) --}}
+            {{-- BAGIAN 2: TAMPILAN MOBILE --}}
             <div class="block md:hidden px-4">
                 @forelse($transactions as $transaction)
                 <div class="bg-white p-5 mb-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
                     
-                    {{-- Garis Warna di Kiri --}}
                     <div class="absolute left-0 top-0 bottom-0 w-1 {{ $transaction->type == 'income' ? 'bg-green-500' : 'bg-red-500' }}"></div>
+
+                    {{-- Label Pemilik di Mobile (Khusus Admin) --}}
+                    @if(Auth::user()->role == 'admin')
+                    <div class="mb-2 flex items-center gap-2">
+                        <span class="bg-gray-800 text-white text-[10px] px-2 py-0.5 rounded shadow-sm">
+                            👤 {{ $transaction->user->name }}
+                        </span>
+                    </div>
+                    @endif
 
                     <div class="flex justify-between items-start mb-2 pl-3">
                         <div>
@@ -105,12 +138,20 @@
                 @endforelse
             </div>
 
-            {{-- BAGIAN 3: TAMPILAN DESKTOP (Table Modern) --}}
+            {{-- BAGIAN 3: TAMPILAN DESKTOP --}}
             <div class="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Tanggal</th>
+                            
+                            {{-- KOLOM KHUSUS ADMIN --}}
+                            @if(Auth::user()->role == 'admin')
+                            <th class="px-6 py-4 text-left text-xs font-bold text-red-500 uppercase tracking-wider">
+                                Pemilik Dompet
+                            </th>
+                            @endif
+
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Keterangan</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Kategori</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Bukti</th>
@@ -125,6 +166,22 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 {{ \Carbon\Carbon::parse($transaction->date)->format('d M Y') }}
                             </td>
+                            
+                            {{-- ISI KOLOM KHUSUS ADMIN --}}
+                            @if(Auth::user()->role == 'admin')
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs mr-3">
+                                        {{ substr($transaction->user->name, 0, 1) }}
+                                    </div>
+                                    <div>
+                                        <div class="text-sm font-bold text-gray-900">{{ $transaction->user->name }}</div>
+                                        <div class="text-xs text-gray-400">{{ $transaction->user->email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            @endif
+
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm font-bold text-gray-900">{{ $transaction->title }}</div>
                             </td>
@@ -172,7 +229,8 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-10 text-center text-gray-500">
+                            {{-- COLSPAN OTOMATIS: 8 Kalau Admin, 7 Kalau Member --}}
+                            <td colspan="{{ Auth::user()->role == 'admin' ? 8 : 7 }}" class="px-6 py-10 text-center text-gray-500">
                                 <p class="text-base">Belum ada data transaksi.</p>
                             </td>
                         </tr>

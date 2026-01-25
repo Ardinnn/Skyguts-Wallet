@@ -5,50 +5,53 @@ namespace App\Http\Controllers;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage; // Tambahkan ini buat hapus gambar lama
 
 class TransactionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
-        $userId = Auth::id();
+        $userId = Auth::id(); // Ambil ID User yang sedang login
 
-        // 1. Ambil input tanggal dari user (Default ke Bulan Ini jika kosong)
+        // 1. Ambil input tanggal (Default ke Bulan Ini)
         $filterDate = $request->input('date', date('Y-m'));
-
-        // Pecah string "2026-01" menjadi Tahun "2026" dan Bulan "01"
         [$year, $month] = explode('-', $filterDate);
 
-        // 2. Ambil data transaksi (Difilter Tahun & Bulan)
-        $transactions = Transaction::where('user_id', $userId)
-                        ->whereYear('date', $year)
-                        ->whereMonth('date', $month)
-                        ->orderBy('date', 'desc')
-                        ->get();
+        // --- BAGIAN 1: DATA UNTUK TABEL (DAFTAR TRANSAKSI) ---
+        $query = Transaction::query();
 
-        // 3. Hitung Total Pemasukan (Difilter Tahun & Bulan)
-        $totalPemasukan = Transaction::where('user_id', $userId)
-                        ->whereYear('date', $year)
-                        ->whereMonth('date', $month)
-                        ->where('type', 'income')
-                        ->sum('amount');
+        // Kalau BUKAN Admin, paksa cuma lihat punya sendiri
+        if (Auth::user()->role !== 'admin') {
+            $query->where('user_id', $userId);
+        }
 
-        // 4. Hitung Total Pengeluaran (Difilter Tahun & Bulan)
-        $totalPengeluaran = Transaction::where('user_id', $userId)
-                        ->whereYear('date', $year)
-                        ->whereMonth('date', $month)
-                        ->where('type', 'expense')
-                        ->sum('amount');
+        // Ambil data untuk tabel
+        $transactions = $query->with('user')
+                              ->whereYear('date', $year)
+                              ->whereMonth('date', $month)
+                              ->orderBy('date', 'desc')
+                              ->get();
 
-        // 5. Hitung Saldo
+
+        // --- BAGIAN 2: DATA UNTUK KARTU SALDO (KHUSUS PRIBADI) ---
+        // Kita query ulang KHUSUS untuk menghitung saldo PRIBADI saja.
+        // Jadi walaupun Admin melihat data orang lain di tabel,
+        // Kartu saldonya tetap menunjukkan uang dia sendiri.
+        
+        $personalTransactions = Transaction::where('user_id', $userId)
+                                           ->whereYear('date', $year)
+                                           ->whereMonth('date', $month)
+                                           ->get();
+
+        $totalPemasukan = $personalTransactions->where('type', 'income')->sum('amount');
+        $totalPengeluaran = $personalTransactions->where('type', 'expense')->sum('amount');
         $saldo = $totalPemasukan - $totalPengeluaran;
 
-        // Kirim variabel ke View (termasuk $filterDate agar tanggal di input tidak reset)
+
+        // Kirim ke View
         return view('transactions.index', compact('transactions', 'totalPemasukan', 'totalPengeluaran', 'saldo', 'filterDate'));
     }
-    
+
     public function create()
     {
         return view('transactions.create');
@@ -56,81 +59,90 @@ class TransactionController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Validasi (Tambahkan validasi gambar)
         $request->validate([
             'title' => 'required|max:255',
             'amount' => 'required|numeric',
             'type' => 'required|in:income,expense',
             'date' => 'required|date',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048', // Maksimal 2MB
+            'category' => 'required',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        // 2. Cek apakah user mengupload gambar?
-        $imagePath = null; // Default kosong
-        
+        $imagePath = null;
         if ($request->hasFile('image')) {
-            // Simpan ke folder public/images
             $imagePath = $request->file('image')->store('images', 'public');
         }
 
-        // 3. Simpan ke Database
         Transaction::create([
             'user_id' => Auth::id(),
-            'title' => $request->title,      // Pakai title kamu
+            'title' => $request->title,
             'amount' => $request->amount,
-            'category' => $request->category, // Pakai category kamu
+            'category' => $request->category,
             'type' => $request->type,
             'date' => $request->date,
-            'image' => $imagePath,           // Masukkan path gambar di sini
+            'image' => $imagePath,
         ]);
 
         return redirect()->route('transactions.index')->with('success', 'Transaksi berhasil disimpan!');
     }
 
-    // Menampilkan halaman edit
     public function edit(Transaction $transaction)
     {
-        // Cek kepemilikan data (agar tidak bisa edit punya orang lain)
-        if ($transaction->user_id != Auth::id()) {
-            abort(403);
+        // PERBAIKAN: Admin BOLEH akses, atau Pemilik Asli BOLEH akses
+        if ($transaction->user_id != Auth::id() && Auth::user()->role !== 'admin') {
+            abort(403, 'Anda tidak berhak mengedit data ini.');
         }
+        
         return view('transactions.edit', compact('transaction'));
     }
 
-    // Menyimpan perubahan data
     public function update(Request $request, Transaction $transaction)
     {
-        if ($transaction->user_id != Auth::id()) {
+        // PERBAIKAN: Admin BOLEH akses
+        if ($transaction->user_id != Auth::id() && Auth::user()->role !== 'admin') {
             abort(403);
         }
 
-        // Validasi
         $request->validate([
             'title' => 'required|max:255',
             'amount' => 'required|numeric',
             'type' => 'required|in:income,expense',
             'date' => 'required|date',
-            'category' => 'required', // Tambahan validasi kategori
+            'category' => 'required',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        // Update data
-        $transaction->update($request->all());
+        // PERBAIKAN: Logic Update Gambar
+        $data = $request->all();
+
+        if ($request->hasFile('image')) {
+            // 1. Hapus gambar lama jika ada
+            if ($transaction->image) {
+                Storage::disk('public')->delete($transaction->image);
+            }
+            // 2. Upload gambar baru
+            $data['image'] = $request->file('image')->store('images', 'public');
+        }
+
+        $transaction->update($data);
 
         return redirect()->route('transactions.index')->with('success', 'Transaksi berhasil diperbarui!');
     }
 
-    // Menghapus data
     public function destroy(Transaction $transaction)
     {
-        if ($transaction->user_id != Auth::id()) {
+        // PERBAIKAN: Admin BOLEH akses
+        if ($transaction->user_id != Auth::id() && Auth::user()->role !== 'admin') {
             abort(403);
+        }
+
+        // Hapus gambar dari penyimpanan jika ada
+        if ($transaction->image) {
+            Storage::disk('public')->delete($transaction->image);
         }
 
         $transaction->delete();
 
         return redirect()->route('transactions.index')->with('success', 'Transaksi berhasil dihapus!');
     }
-
-    
-    }
-
+}

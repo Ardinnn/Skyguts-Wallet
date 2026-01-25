@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +19,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::resource('transactions', TransactionController::class);
+    Route::get('/admin/users', [AdminController::class, 'index'])->name('admin.users');
 });
 
 require __DIR__.'/auth.php';
